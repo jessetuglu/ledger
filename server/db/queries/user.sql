@@ -10,12 +10,13 @@ WHERE email = $1 LIMIT 1;
 SELECT * FROM ledgers
 WHERE $1 = ANY (ledgers.members);
 
--- name: CreateUser :one
-INSERT INTO users (
-    email, first_name, last_name
+-- name: GetOrCreateUser :one
+WITH i AS(
+    INSERT INTO users (email, first_name, last_name) 
+    VALUES ($1, $2, $3)
+    ON CONFLICT(email) DO NOTHING
+    RETURNING *
 )
-VALUES (
-    $1, $2, $3
-)
-ON CONFLICT DO NOTHING
-RETURNING *;
+SELECT * FROM i
+UNION
+SELECT * FROM users WHERE email = $1;

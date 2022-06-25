@@ -15,17 +15,17 @@ func (s *Server) loadRoutes(){
 	api_group.GET("/auth/callback", s.googleCallBackHandler)
 	
 	// user routes
-	api_group.GET("/users/:id", s.getUserById) //tmp
+	api_group.GET("/users/:id", s.validLoginMiddleware(), s.getUserById) //tmp
 
 	// ledger routes
-	api_group.GET("/ledgers/:id", s.getLedgerById) //tmp
-	api_group.POST("/ledgers", s.createLedger) //tmp
-	api_group.PUT("/ledgers/:id/add_user", s.addUserToLedger) //tmp
-	api_group.DELETE("/ledgers/:id", s.deleteLedger) //tmp
+	api_group.GET("/ledgers/:id", s.validLoginMiddleware(), s.getLedgerById) //tmp
+	api_group.POST("/ledgers", s.validLoginMiddleware(), s.createLedger) //tmp
+	api_group.PUT("/ledgers/:id/add_user", s.validLoginMiddleware(), s.addUserToLedger) //tmp
+	api_group.DELETE("/ledgers/:id", s.validLoginMiddleware(), s.deleteLedger) //tmp
 
 	// transaction routes
-	api_group.POST("/transactions", s.createTransaction)
-	api_group.DELETE("/transactions/:id", s.deleteTransaction)
+	api_group.POST("/transactions", s.validLoginMiddleware(), s.createTransaction)
+	api_group.DELETE("/transactions/:id", s.validLoginMiddleware(), s.deleteTransaction)
 }
 
 func (s *Server) rootHandler(ctx *gin.Context){

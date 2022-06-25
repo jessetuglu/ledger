@@ -50,7 +50,7 @@ func NewServer(logger *zap.SugaredLogger, conn *sql.DB, config oauth2.Config) *S
 
 	s.devMode = os.Getenv("MODE") == "prod"
 	
-	s.Router.Use(gin.Recovery())
+	s.Router.Use(gin.Recovery(), requestIdInserter())
 	s.loadRoutes()
 
 	return &s

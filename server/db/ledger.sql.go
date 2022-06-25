@@ -65,21 +65,21 @@ func (q *Queries) DeleteLedger(ctx context.Context, id uuid.UUID) error {
 }
 
 const getLedgerById = `-- name: GetLedgerById :one
-SELECT id, title, members, created_at, updated_at FROM ledgers
-WHERE id = $1 LIMIT 1
+SELECT ledger
+FROM (
+  SELECT l.id, l.title, json_agg(json_build_object(t.*)) AS transactions
+  FROM ledgers l
+    JOIN transactions t ON l.id = t.ledger
+  WHERE l.id = $1
+  GROUP BY l.id
+) ledger
 `
 
-func (q *Queries) GetLedgerById(ctx context.Context, id uuid.UUID) (Ledger, error) {
+func (q *Queries) GetLedgerById(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
 	row := q.db.QueryRowContext(ctx, getLedgerById, id)
-	var i Ledger
-	err := row.Scan(
-		&i.ID,
-		&i.Title,
-		pq.Array(&i.Members),
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var ledger uuid.UUID
+	err := row.Scan(&ledger)
+	return ledger, err
 }
 
 const getTransactions = `-- name: GetTransactions :many

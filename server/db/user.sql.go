@@ -5,31 +5,42 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
-const createUser = `-- name: CreateUser :one
-INSERT INTO users (
-    email, first_name, last_name
+const getOrCreateUser = `-- name: GetOrCreateUser :one
+WITH i AS(
+    INSERT INTO users (email, first_name, last_name) 
+    VALUES ($1, $2, $3)
+    ON CONFLICT(email) DO NOTHING
+    RETURNING id, email, first_name, last_name, created_at, updated_at
 )
-VALUES (
-    $1, $2, $3
-)
-ON CONFLICT DO NOTHING
-RETURNING id, email, first_name, last_name, created_at, updated_at
+SELECT id, email, first_name, last_name, created_at, updated_at FROM i
+UNION
+SELECT id, email, first_name, last_name, created_at, updated_at FROM users WHERE email = $1
 `
 
-type CreateUserParams struct {
+type GetOrCreateUserParams struct {
 	Email     string
 	FirstName string
 	LastName  string
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.FirstName, arg.LastName)
-	var i User
+type GetOrCreateUserRow struct {
+	ID        uuid.UUID
+	Email     string
+	FirstName string
+	LastName  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) GetOrCreateUser(ctx context.Context, arg GetOrCreateUserParams) (GetOrCreateUserRow, error) {
+	row := q.db.QueryRowContext(ctx, getOrCreateUser, arg.Email, arg.FirstName, arg.LastName)
+	var i GetOrCreateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,

@@ -11,5 +11,5 @@ type ErrorMessage struct {
 }
 
 type byUUIDRequest struct {
-	Id uuid.UUID `json:"id" binding:"required"`
+	Id uuid.UUID `json:"id" binding:"required, len=36"`
 }

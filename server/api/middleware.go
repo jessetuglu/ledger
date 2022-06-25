@@ -11,7 +11,7 @@ const (
 	emailContextKey = "user_email"
 	firstNameContextKey = "user_first_name"
 	fullNameContextKey = "user_full_name"
-	sessionContextKey = "sesh"
+	sessionContextKey = "session"
 )
 
 func requestIdInserter() gin.HandlerFunc {
@@ -31,8 +31,8 @@ func (s *Server) validLoginMiddleware() gin.HandlerFunc {
 		}
 		_, ok := session.Values["email"].(string)
 		if !ok {
-			s.logger.Infow("Missing email", err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, ErrorMessage{"Make sure you are signed in"})
+			s.logger.Infow("Unauthorized request", err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, ErrorMessage{"Make sure you are signed in!"})
 			return
 		}
 		ctx.Next()

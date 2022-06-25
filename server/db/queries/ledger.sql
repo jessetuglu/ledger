@@ -1,6 +1,12 @@
 -- name: GetLedgerById :one
-SELECT * FROM ledgers
-WHERE id = $1 LIMIT 1;
+SELECT ledger
+FROM (
+  SELECT l.id, l.title, json_agg(json_build_object(t.*)) AS transactions
+  FROM ledgers l
+    JOIN transactions t ON l.id = t.ledger
+  WHERE l.id = $1
+  GROUP BY l.id
+) ledger;
 
 -- name: CreateLedger :one
 INSERT INTO ledgers (

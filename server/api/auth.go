@@ -73,19 +73,14 @@ func (s *Server) googleCallBackHandler(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, ErrorMessage{err.Error()})
 		return
 	}
-	
-	session.Values["email"] = info.Email
-	session.Values["first_name"] = info.GivenName
 
-	s.sessions.Save(ctx.Request, ctx.Writer, session)
-
-	args := db.CreateUserParams{
+	args := db.GetOrCreateUserParams{
 		Email: info.Email,
 		FirstName: info.GivenName,
 		LastName: info.FamilyName,
 	}
 
-	user, err := s.store.CreateUser(ctx, args)
+	user, err := s.store.GetOrCreateUser(ctx, args)
 
 	if (err != nil){
 		s.logger.Errorw("Couldn't save user", err)
@@ -93,6 +88,11 @@ func (s *Server) googleCallBackHandler(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, ErrorMessage{err.Error()})
 		return
 	}
+
+	session.Values["email"] = info.Email
+	session.Values["first_name"] = info.GivenName
+
+	s.sessions.Save(ctx.Request, ctx.Writer, session)
 
 	s.logger.Infof("Successfully authenticated user: ", info.Email)
 	
