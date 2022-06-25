@@ -14,7 +14,7 @@ func (s *Server) getUserById(ctx *gin.Context){
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, ErrorMessage{"No user id found"})
 		return
 	}
-	user_id, err := uuid.Parse(param_id)
+	user_id, _ := uuid.Parse(param_id)
 	user, err := s.store.GetUserById(ctx, user_id)
 	if err != nil {
 		s.logger.Errorw("Couldn't get user: ", err.Error())

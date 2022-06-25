@@ -38,3 +38,14 @@ func (s *Server) validLoginMiddleware() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+func (s *Server) setUserDetails() gin.HandlerFunc{
+	return func(ctx *gin.Context){
+		session, _ := s.sessions.Get(ctx.Request, "session")
+		ctx.Set("user_id", session.Values["id"])
+		ctx.Set("user_email", session.Values["email"])
+		ctx.Set("user_first_name", session.Values["first_name"])
+		ctx.Set("user_last_name", session.Values["last_name"])
+		ctx.Next()
+	}
+}

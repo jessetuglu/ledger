@@ -14,7 +14,7 @@ type createLedgerRequest struct {
 }
 
 type addUserToLedgerRequest struct {
-	ID   uuid.UUID `json:"id" binding:"required"`
+	ID uuid.UUID `json:"id" binding:"required"`
 	User uuid.UUID `json:"user" binding:"required"`
 }
 
@@ -39,32 +39,35 @@ func (s *Server) createLedger(ctx *gin.Context) {
 }
 
 func (s *Server) getLedgerById(ctx *gin.Context) {
-	var req byUUIDRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, ErrorMessage{err.Error()})
+	param_id, found := ctx.Params.Get("id")
+	if (!found) {
+		s.logger.Error("Id param not found")
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, ErrorMessage{"Invalid ledger ID"})
 		return
 	}
-
-	ledger, err := s.store.GetLedgerById(ctx, req.Id)
+	ledger_id, _ := uuid.Parse(param_id)
+	ledger, err := s.store.GetLedgerById(ctx, ledger_id)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, Message{err.Error()})
+		s.logger.Error("Couldn't get user: ", err.Error())
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, ErrorMessage{"Ledger not found"})
 		return
 	}
 	ctx.JSON(http.StatusOK, ledger)
 }
 
 func (s *Server) deleteLedger(ctx *gin.Context) {
-	var req byUUIDRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, Message{err.Error()})
+	param_id, found := ctx.Params.Get("id")
+	if (!found) {
+		s.logger.Error("Id param not found")
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, ErrorMessage{"Invalid ledger ID"})
 		return
 	}
-
-	if err := s.store.DeleteLedger(ctx, req.Id); err != nil {
+	ledger_id, _ := uuid.Parse(param_id)
+	if err := s.store.DeleteLedger(ctx, ledger_id); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, ErrorMessage{err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, Message{"Ledger with id: " + req.Id.String() + " successfully deleted."})
+	ctx.JSON(http.StatusOK, Message{"Ledger with id: " + ledger_id.String() + " successfully deleted."})
 }
 
 func (s *Server) addUserToLedger(ctx *gin.Context) {

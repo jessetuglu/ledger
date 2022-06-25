@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"github.com/jessetuglu/bill_app/server/db"
+	"github.com/gin-contrib/cors"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 )
@@ -30,6 +31,7 @@ func NewServer(logger *zap.SugaredLogger, conn *sql.DB, config oauth2.Config) *S
 	s.logger = logger
 	s.store = db.NewStore(conn)
 	s.oauthConfig = config
+	s.devMode = os.Getenv("MODE") == "prod"
 
 	s.serverBaseUrl = os.Getenv("SERVER_BASE_URL")
 	s.clientBaseUrl = os.Getenv("CLIENT_BASE_URL")
@@ -47,10 +49,10 @@ func NewServer(logger *zap.SugaredLogger, conn *sql.DB, config oauth2.Config) *S
 	}
 
 	s.Router = gin.Default()
-
-	s.devMode = os.Getenv("MODE") == "prod"
+	cors_config := cors.DefaultConfig()
+	cors_config.AllowOrigins = []string{s.clientBaseUrl}
 	
-	s.Router.Use(gin.Recovery(), requestIdInserter())
+	s.Router.Use(cors.New(cors_config), gin.Recovery(), requestIdInserter(), s.setUserDetails())
 	s.loadRoutes()
 
 	return &s

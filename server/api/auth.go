@@ -1,10 +1,13 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/dchest/uniuri"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jessetuglu/bill_app/server/db"
 	goauth2 "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
@@ -22,7 +25,7 @@ var blankSessionCookie = &http.Cookie{
 func (s *Server) googleLoginHandler(ctx *gin.Context) {
 	session, err := s.sessions.New(ctx.Request, sessionContextKey)
 	if err != nil {
-		s.logger.Errorw("Couldn't get session", err)
+		s.logger.Errorw("Couldn't make session", err)
 
 		ctx.SetCookie(sessionContextKey, "", -1, "/", s.serverBaseUrl, true, true)
 		ctx.Redirect(http.StatusTemporaryRedirect, s.serverBaseUrl + "/api/auth/login")
@@ -91,11 +94,39 @@ func (s *Server) googleCallBackHandler(ctx *gin.Context) {
 
 	session.Values["email"] = info.Email
 	session.Values["first_name"] = info.GivenName
+	session.Values["last_name"] = info.FamilyName
+	session.Values["id"] = user.ID.String()
 
 	s.sessions.Save(ctx.Request, ctx.Writer, session)
 
-	s.logger.Infof("Successfully authenticated user: ", info.Email)
+	s.logger.Info("Successfully authenticated user: ", info.Email)
 	
-	ctx.Writer.Header().Add("Auth-User-Id", user.ID.String())
 	ctx.Redirect(http.StatusTemporaryRedirect, s.clientBaseUrl)
+}
+
+func (s *Server) getCurrentUser (ctx *gin.Context){
+	id := ctx.Value("user_id").(string)
+	user_id, err := uuid.Parse(id)
+	if (err != nil){
+		s.logger.Errorf("Couldn't parse id", err.Error())
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, ErrorMessage{"Couldn't authorize you."})
+		return
+	}
+	user_email := ctx.Value("user_email").(string)
+	user_first_name := ctx.Value("user_first_name").(string)
+	last_name := ctx.Value("user_last_name")
+	var user_last_name sql.NullString
+	user_last_name.Scan(last_name)
+
+
+	curr_user := db.User{
+		ID: user_id,
+		Email: user_email,
+		FirstName: user_first_name,
+		LastName: user_last_name,
+		CreatedAt: time.Now(), //tmp
+		UpdatedAt: time.Now(), //tmp
+	}
+
+	ctx.JSON(http.StatusOK, curr_user)
 }

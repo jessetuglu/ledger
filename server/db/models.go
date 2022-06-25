@@ -24,7 +24,7 @@ type Transaction struct {
 	Creditor  uuid.UUID `json: "creditor"`
 	Date	  time.Time `json: "date"`
 	Amount    float64 `json: "amount"`
-	Note      sql.NullString `json: "note"`
+	Note      sql.NullString `json: "note,omitempty"`
 	CreatedAt time.Time	`json: "created_at"`
 	UpdatedAt time.Time `json: "updated_at"`
 }
@@ -33,7 +33,7 @@ type User struct {
 	ID        uuid.UUID	`json: "id"`
 	Email     string `json: "email"`
 	FirstName string `json: "first_name"`
-	LastName  sql.NullString `json: "last_name"`
+	LastName  sql.NullString `json: "last_name,omitempty"`
 	CreatedAt time.Time	`json: "created_at"`
 	UpdatedAt time.Time `json: "updated_at"`
 }
