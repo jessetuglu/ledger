@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  server:
+    image: golang:latest
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - dev.env
+    networks:
+      - default
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - dev.env
+  db:
+    image: postgres:13.5
+    restart: always
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/setup.sql
+    environment:
+      - POSTGRES_USER=bill_app
+      - POSTGRES_PASSWORD=bill_app
+      - POSTGRES_DB=bill_app_db
+    ports:
+      - "5432:5432"
+volumes:
+  db:

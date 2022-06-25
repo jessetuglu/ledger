@@ -1,0 +1,5 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/Users/jessetuglu/programming/personal/projects/bill_app'
+make: 'dev' is up to date.
+make: Leaving directory '/Users/jessetuglu/programming/personal/projects/bill_app'
+ 
