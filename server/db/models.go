@@ -13,15 +13,16 @@ type Ledger struct {
 	ID           uuid.UUID `json: "id"`
 	Title        string `json: "title"`
 	Members      []uuid.UUID `json: "members"`
-	Transactions []int64 `json: "transactions"`
 	CreatedAt    time.Time `json: "created_at"`
 	UpdatedAt    time.Time `json: "updated_at"`
 }
 
 type Transaction struct {
 	ID        int64 `json: "id"`
+	Ledger	  uuid.UUID `json: "ledger"`
 	Debitor   uuid.UUID `json: "debitor"`
 	Creditor  uuid.UUID `json: "creditor"`
+	Date	  time.Time `json: "date"`
 	Amount    float64 `json: "amount"`
 	Note      sql.NullString `json: "note"`
 	CreatedAt time.Time	`json: "created_at"`

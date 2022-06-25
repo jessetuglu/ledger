@@ -10,35 +10,18 @@ import (
 	"github.com/lib/pq"
 )
 
-const addTransactionToLedger = `-- name: AddTransactionToLedger :exec
-UPDATE ledgers SET transactions = array_append(transactions, $2)
-WHERE id = $1
-RETURNING id, title, members, transactions, created_at, updated_at
-`
-
-type AddTransactionToLedgerParams struct {
-	ID          uuid.UUID
-	ArrayAppend interface{}
-}
-
-func (q *Queries) AddTransactionToLedger(ctx context.Context, arg AddTransactionToLedgerParams) error {
-	_, err := q.db.ExecContext(ctx, addTransactionToLedger, arg.ID, arg.ArrayAppend)
-	return err
-}
-
 const addUserToLedger = `-- name: AddUserToLedger :exec
-UPDATE ledgers SET members = array_append(members, $2)
+UPDATE ledgers SET members = ARRAY_APPEND(members, $2)
 WHERE id = $1
-RETURNING id, title, members, transactions, created_at, updated_at
 `
 
 type AddUserToLedgerParams struct {
 	ID          uuid.UUID
-	ArrayAppend interface{}
+	User          uuid.UUID
 }
 
 func (q *Queries) AddUserToLedger(ctx context.Context, arg AddUserToLedgerParams) error {
-	_, err := q.db.ExecContext(ctx, addUserToLedger, arg.ID, arg.ArrayAppend)
+	_, err := q.db.ExecContext(ctx, addUserToLedger, arg.ID, arg.User)
 	return err
 }
 
@@ -50,7 +33,7 @@ VALUES (
     $1, $2
 )
 ON CONFLICT DO NOTHING
-RETURNING id, title, members, transactions, created_at, updated_at
+RETURNING id, title, members, created_at, updated_at
 `
 
 type CreateLedgerParams struct {
@@ -65,7 +48,6 @@ func (q *Queries) CreateLedger(ctx context.Context, arg CreateLedgerParams) (Led
 		&i.ID,
 		&i.Title,
 		pq.Array(&i.Members),
-		pq.Array(&i.Transactions),
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -83,7 +65,7 @@ func (q *Queries) DeleteLedger(ctx context.Context, id uuid.UUID) error {
 }
 
 const getLedgerById = `-- name: GetLedgerById :one
-SELECT id, title, members, transactions, created_at, updated_at FROM ledgers
+SELECT id, title, members, created_at, updated_at FROM ledgers
 WHERE id = $1 LIMIT 1
 `
 
@@ -94,24 +76,61 @@ func (q *Queries) GetLedgerById(ctx context.Context, id uuid.UUID) (Ledger, erro
 		&i.ID,
 		&i.Title,
 		pq.Array(&i.Members),
-		pq.Array(&i.Transactions),
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
+const getTransactions = `-- name: GetTransactions :many
+SELECT id, ledger, debitor, creditor, date, amount, note, created_at, updated_at FROM transactions
+WHERE transactions.ledger = $1
+`
+
+func (q *Queries) GetTransactions(ctx context.Context, ledger uuid.UUID) ([]Transaction, error) {
+	rows, err := q.db.QueryContext(ctx, getTransactions, ledger)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Transaction
+	for rows.Next() {
+		var i Transaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.Ledger,
+			&i.Debitor,
+			&i.Creditor,
+			&i.Date,
+			&i.Amount,
+			&i.Note,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const removeUserFromLedger = `-- name: RemoveUserFromLedger :exec
-SELECT array_remove(members, $2) as members from ledgers
-WHERE id = $1
+UPDATE ledgers SET members = ARRAY_REMOVE(members, $2)
+WHERE ledgers.id::text = $1
 `
 
 type RemoveUserFromLedgerParams struct {
 	ID          uuid.UUID
-	ArrayRemove interface{}
+	User          uuid.UUID
 }
 
 func (q *Queries) RemoveUserFromLedger(ctx context.Context, arg RemoveUserFromLedgerParams) error {
-	_, err := q.db.ExecContext(ctx, removeUserFromLedger, arg.ID, arg.ArrayRemove)
+	_, err := q.db.ExecContext(ctx, removeUserFromLedger, arg.ID, arg.User)
 	return err
 }

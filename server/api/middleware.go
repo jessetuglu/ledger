@@ -26,13 +26,13 @@ func (s *Server) validLoginMiddleware() gin.HandlerFunc {
 		session, err := s.sessions.Get(ctx.Request, "session")
 		if (err != nil){
 			s.logger.Infow("Invalid Session", err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, "Try logging in again.")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, ErrorMessage{"Try logging in again."})
 			return
 		}
 		_, ok := session.Values["email"].(string)
 		if !ok {
 			s.logger.Infow("Missing email", err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, "Make sure you are signed in")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, ErrorMessage{"Make sure you are signed in"})
 			return
 		}
 		ctx.Next()

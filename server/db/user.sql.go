@@ -5,13 +5,12 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const createUser = `-- name: CreateUser :one
-
 INSERT INTO users (
     email, first_name, last_name
 )
@@ -25,12 +24,9 @@ RETURNING id, email, first_name, last_name, created_at, updated_at
 type CreateUserParams struct {
 	Email     string
 	FirstName string
-	LastName  sql.NullString
+	LastName  string
 }
 
-// -- name: GetUserLedgers :many
-// SELECT * FROM ledgers
-// WHERE $1 IN members;
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.FirstName, arg.LastName)
 	var i User
@@ -43,16 +39,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM users
-WHERE id = $1
-`
-
-func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, id)
-	return err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
@@ -91,4 +77,38 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getUserLedgers = `-- name: GetUserLedgers :many
+SELECT id, title, members, created_at, updated_at FROM ledgers
+WHERE $1 = ANY (ledgers.members)
+`
+
+func (q *Queries) GetUserLedgers(ctx context.Context, dollar_1 interface{}) ([]Ledger, error) {
+	rows, err := q.db.QueryContext(ctx, getUserLedgers, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Ledger
+	for rows.Next() {
+		var i Ledger
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			pq.Array(&i.Members),
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

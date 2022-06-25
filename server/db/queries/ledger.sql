@@ -17,15 +17,13 @@ DELETE FROM ledgers
 WHERE id = $1;
 
 -- name: AddUserToLedger :exec
-UPDATE ledgers SET members = array_append(members, $2)
-WHERE id = $1
-RETURNING *;
-
--- name: AddTransactionToLedger :exec
-UPDATE ledgers SET transactions = array_append(transactions, $2)
-WHERE id = $1
-RETURNING *;
+UPDATE ledgers SET members = ARRAY_APPEND(members, $2)
+WHERE id = $1;
 
 -- name: RemoveUserFromLedger :exec
-SELECT array_remove(members, $2) as members from ledgers
-WHERE id = $1;
+UPDATE ledgers SET members = ARRAY_REMOVE(members, $2)
+WHERE ledgers.id::text = $1;
+
+-- name: GetTransactions :many
+SELECT * FROM transactions
+WHERE transactions.ledger = $1;

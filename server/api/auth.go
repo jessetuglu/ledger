@@ -5,6 +5,7 @@ import (
 
 	"github.com/dchest/uniuri"
 	"github.com/gin-gonic/gin"
+	"github.com/jessetuglu/bill_app/server/db"
 	goauth2 "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
 )
@@ -51,7 +52,8 @@ func (s *Server) googleCallBackHandler(ctx *gin.Context) {
 
 	if (err != nil){
 		s.logger.Errorw("Couldn't get auth token", err)
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+		ctx.SetCookie(sessionContextKey, "", -1, "/", s.serverBaseUrl, true, true)
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, ErrorMessage{err.Error()})
 		return
 	}
 
@@ -59,6 +61,8 @@ func (s *Server) googleCallBackHandler(ctx *gin.Context) {
 
 	if (err != nil){
 		s.logger.Errorw("Couldn't make new auth service", err)
+		ctx.SetCookie(sessionContextKey, "", -1, "/", s.serverBaseUrl, true, true)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, ErrorMessage{err.Error()})
 		return
 	}
 
@@ -66,6 +70,7 @@ func (s *Server) googleCallBackHandler(ctx *gin.Context) {
 
 	if (err != nil){
 		s.logger.Errorw("Couldn't get info from new auth service", err)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, ErrorMessage{err.Error()})
 		return
 	}
 	
@@ -74,6 +79,23 @@ func (s *Server) googleCallBackHandler(ctx *gin.Context) {
 
 	s.sessions.Save(ctx.Request, ctx.Writer, session)
 
+	args := db.CreateUserParams{
+		Email: info.Email,
+		FirstName: info.GivenName,
+		LastName: info.FamilyName,
+	}
+
+	user, err := s.store.CreateUser(ctx, args)
+
+	if (err != nil){
+		s.logger.Errorw("Couldn't save user", err)
+		ctx.SetCookie(sessionContextKey, "", -1, "/", s.serverBaseUrl, true, true)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, ErrorMessage{err.Error()})
+		return
+	}
+
 	s.logger.Infof("Successfully authenticated user: ", info.Email)
-	ctx.Redirect(http.StatusOK, s.clientBaseUrl)
+	
+	ctx.Writer.Header().Add("Auth-User-Id", user.ID.String())
+	ctx.Redirect(http.StatusTemporaryRedirect, s.clientBaseUrl)
 }

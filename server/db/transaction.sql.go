@@ -6,40 +6,47 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const createTransaction = `-- name: CreateTransaction :one
 INSERT INTO transactions (
-    debitor, creditor, amount, note
+    ledger, debitor, creditor, amount, note, date
 )
 VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5, $6
 )
 ON CONFLICT DO NOTHING
-RETURNING id, debitor, creditor, amount, note, created_at, updated_at
+RETURNING id, ledger, debitor, creditor, date, amount, note, created_at, updated_at
 `
 
 type CreateTransactionParams struct {
+	Ledger   uuid.UUID
 	Debitor  uuid.UUID
 	Creditor uuid.UUID
 	Amount   float64
 	Note     sql.NullString
+	Date     time.Time
 }
 
 func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error) {
 	row := q.db.QueryRowContext(ctx, createTransaction,
+		arg.Ledger,
 		arg.Debitor,
 		arg.Creditor,
 		arg.Amount,
 		arg.Note,
+		arg.Date,
 	)
 	var i Transaction
 	err := row.Scan(
 		&i.ID,
+		&i.Ledger,
 		&i.Debitor,
 		&i.Creditor,
+		&i.Date,
 		&i.Amount,
 		&i.Note,
 		&i.CreatedAt,
@@ -48,8 +55,18 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 	return i, err
 }
 
+const deleteTransaction = `-- name: DeleteTransaction :exec
+DELETE FROM transactions
+WHERE id = $1
+`
+
+func (q *Queries) DeleteTransaction(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteTransaction, id)
+	return err
+}
+
 const getTransactionById = `-- name: GetTransactionById :one
-SELECT id, debitor, creditor, amount, note, created_at, updated_at FROM transactions
+SELECT id, ledger, debitor, creditor, date, amount, note, created_at, updated_at FROM transactions
 WHERE id = $1 LIMIT 1
 `
 
@@ -58,8 +75,10 @@ func (q *Queries) GetTransactionById(ctx context.Context, id int64) (Transaction
 	var i Transaction
 	err := row.Scan(
 		&i.ID,
+		&i.Ledger,
 		&i.Debitor,
 		&i.Creditor,
+		&i.Date,
 		&i.Amount,
 		&i.Note,
 		&i.CreatedAt,

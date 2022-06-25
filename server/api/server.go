@@ -21,6 +21,7 @@ type Server struct {
 
 	serverBaseUrl string
 	clientBaseUrl string
+	devMode bool
 }
 
 func NewServer(logger *zap.SugaredLogger, conn *sql.DB, config oauth2.Config) *Server {
@@ -29,6 +30,9 @@ func NewServer(logger *zap.SugaredLogger, conn *sql.DB, config oauth2.Config) *S
 	s.logger = logger
 	s.store = db.NewStore(conn)
 	s.oauthConfig = config
+
+	s.serverBaseUrl = os.Getenv("SERVER_BASE_URL")
+	s.clientBaseUrl = os.Getenv("CLIENT_BASE_URL")
 
 	s.sessions, err = pgstore.NewPGStoreFromPool(conn, []byte(os.Getenv("SESSIONS_KEY")))
 	if err != nil {
@@ -44,10 +48,8 @@ func NewServer(logger *zap.SugaredLogger, conn *sql.DB, config oauth2.Config) *S
 
 	s.Router = gin.Default()
 
-	if os.Getenv("MODE") == "prod" {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
+	s.devMode = os.Getenv("MODE") == "prod"
+	
 	s.Router.Use(gin.Recovery())
 	s.loadRoutes()
 
