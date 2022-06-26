@@ -1,7 +1,7 @@
 export const Auth = () => {
     return (
         <div>
-            Current ledgers:
+            Create a ledger
         </div>
     )
 }

@@ -11,7 +11,7 @@ function App() {
   
   
   useEffect(() => {
-    fetch("http://localhost:8080/api/auth/whoami") //TODO: make this ENV
+    fetch("http://localhost:8080/api/auth/whoami", {credentials: 'include'}) //TODO: make this ENV
     .then(response => {
       if (response.status == 200){
         response.json();

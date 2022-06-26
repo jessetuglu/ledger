@@ -51,8 +51,9 @@ func NewServer(logger *zap.SugaredLogger, conn *sql.DB, config oauth2.Config) *S
 	s.Router = gin.Default()
 	cors_config := cors.DefaultConfig()
 	cors_config.AllowOrigins = []string{s.clientBaseUrl}
+	cors_config.AllowCredentials = true
 	
-	s.Router.Use(cors.New(cors_config), gin.Recovery(), requestIdInserter(), s.setUserDetails())
+	s.Router.Use(cors.New(cors_config), gin.Recovery(), requestIdInserter())
 	s.loadRoutes()
 
 	return &s

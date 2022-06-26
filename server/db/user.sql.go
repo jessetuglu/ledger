@@ -95,8 +95,8 @@ SELECT id, title, members, created_at, updated_at FROM ledgers
 WHERE $1 = ANY (ledgers.members)
 `
 
-func (q *Queries) GetUserLedgers(ctx context.Context, dollar_1 interface{}) ([]Ledger, error) {
-	rows, err := q.db.QueryContext(ctx, getUserLedgers, dollar_1)
+func (q *Queries) GetUserLedgers(ctx context.Context, member uuid.UUID) ([]Ledger, error) {
+	rows, err := q.db.QueryContext(ctx, getUserLedgers, member)
 	if err != nil {
 		return nil, err
 	}
