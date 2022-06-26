@@ -1,38 +1,35 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
-import {User} from './types/User';
-import { NoAuth } from './views/NoAuth';
-import { Auth } from './views/Auth';
+import { User } from './types';
+import { NoAuth } from './pages/NoAuth';
+import { Auth } from './pages/Auth';
+import axios from 'axios';
 
 
 function App() {
-  const [userInfo, setUserInfo] = useState<User|undefined>(undefined);
+  const [userInfo, setUserInfo] = useState<User | undefined>(undefined);
   const [loggedIn, setLoggedIn] = useState<boolean>(false);
-  
-  
+
+
   useEffect(() => {
-    fetch("http://localhost:8080/api/auth/whoami", {credentials: 'include'}) //TODO: make this ENV
-    .then(response => {
-      if (response.status == 200){
-        response.json();
-      }else{
-        return Promise.reject(response);
-      }
-    }).then(data => {
-      console.log(data);
-      
-      setLoggedIn(true);
-      setUserInfo(data);
-    })
-    .catch(e => {
-      console.log("User is not authenticated.");
-      console.log(e)
-    })
-  },[])
+    axios.get("http://localhost:8080/api/auth/whoami", { withCredentials: true })
+      .then(response => {
+        if (response.status == 200) {
+          console.log(response.data);
+          const data = response.data;
+          setLoggedIn(true);
+          setUserInfo({ email: data.Email, first_name: data.FirstName, last_name: data.LastName, id: data.ID });
+        } else {
+          return Promise.reject(response);
+        }
+      }).catch(e => {
+        console.log(e);
+      })
+  }, [])
   return (
     <div>
       Ledger App
-      {loggedIn ? <Auth/> : <NoAuth/>}
+      {loggedIn ? <Auth user={userInfo} /> : <NoAuth />}
     </div>
   );
 }

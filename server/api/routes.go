@@ -17,6 +17,7 @@ func (s *Server) loadRoutes(){
 	
 	// user routes
 	api_group.GET("/users/:id", s.validLoginMiddleware(), s.getUserById) //tmp
+	api_group.GET("/users/:id/ledgers", s.validLoginMiddleware(), s.getUserLedgers) //tmp
 
 	// ledger routes
 	api_group.GET("/ledgers/:id", s.validLoginMiddleware(), s.getLedgerById) //tmp

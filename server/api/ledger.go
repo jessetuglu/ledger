@@ -21,6 +21,7 @@ type addUserToLedgerRequest struct {
 func (s *Server) createLedger(ctx *gin.Context) {
 	var req createLedgerRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		s.logger.Error("Couldn't parse request:", err.Error())
 		ctx.JSON(http.StatusBadRequest, ErrorMessage{err.Error()})
 		return
 	}
@@ -32,6 +33,7 @@ func (s *Server) createLedger(ctx *gin.Context) {
 
 	ledger, err := s.store.CreateLedger(ctx, arg)
 	if err != nil {
+		s.logger.Error("Couldn't create ledger:", err.Error())
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, ErrorMessage{err.Error()})
 		return
 	}

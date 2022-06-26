@@ -22,28 +22,6 @@ func requestIdInserter() gin.HandlerFunc {
 	}
 }
 
-// func (s *Server) validLoginMiddleware() gin.HandlerFunc {
-// 	return func(ctx *gin.Context){
-// 		s.logger.Info(len(ctx.Request.Cookies()))
-// 		session, err := s.sessions.Get(ctx.Request, "session")
-// 		if (err != nil){
-// 			s.logger.Infow("Invalid Session", err)
-// 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, ErrorMessage{"Try logging in again."})
-// 			return
-// 		}
-// 		for k, v := range (session.Values){
-// 			s.logger.Info("k:", k, " v: ", v)
-// 		}
-// 		email := session.Values["email"]
-// 		if !ok {
-// 			s.logger.Infow("Unauthorized request", err)
-// 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, ErrorMessage{"Make sure you are signed in!"})
-// 			return
-// 		}
-// 		ctx.Next()
-// 	}
-// }
-
 func (s *Server) validLoginMiddleware() gin.HandlerFunc{
 	return func(ctx *gin.Context){
 		session, err := s.sessions.Get(ctx.Request, "session")
