@@ -28,25 +28,37 @@ export const LedgerForm: React.FC<UserProps> = ({ user }): JSX.Element => {
         });
     };
 
+    const deleteLedger = (event: any) => {
+        event.preventDefault();
+        axios.delete("http://localhost:8080/api/ledgers/"+event.target.name)
+        .then((resp)=>{
+            console.log(resp);
+        })
+        .catch((e)=>{
+            console.log(e);
+        });
+    }
+
     useEffect(() => {
         axios.get("http://localhost:8080/api/users/"+user?.id+"/ledgers", {withCredentials: true})
         .then((resp) => {
             console.log(resp.data);
             setLedgers(resp.data);
         })
-    }, []);
+    }, [createForm]);
     return (
         <div>
-            <div>
+            <h3>Ledgers</h3>
+            <ul className="list-group">
                 {ledgers.map((ledger:any, key)=> {
                     return (
-                        <div key={key}>
-                            <p>{ledger.ID}</p>
+                        <li className="list-group-item">
                             <p>{ledger.Title}</p>
-                        </div>
+                            <button name={ledger.ID} onClick={deleteLedger}>Delete</button>
+                        </li>
                     );
                 })}
-            </div>
+            </ul>
             <input type={"text"} onChange={setFormHelper}></input>
             <button onClick={createForm}>Submit</button>
         </div>
